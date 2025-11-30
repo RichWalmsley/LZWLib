@@ -42,7 +42,26 @@ compressHelper (k:ks) w dict nextCode acc =
 
 lzwDecompress :: [Int] -> Maybe String
 lzwDecompress [] = Just ""
-lzwDecompress (firstCode : rest) = undefined
+lzwDecompress (firstCode : rest) =
+    case IntMap.lookup firstCode revInitialDict of
+        Nothing -> Nothing
+        Just firstStr ->
+            Just (decompressHelper rest firstStr revInitialDict 256 firstStr)
+
+decompressHelper
+    :: [Int] -- remaining codes
+    -> String -- previous string
+    -> IntMap.IntMap String -- dictionary
+    -> Int -- next code
+    -> String -- output accumulated
+    -> String -- final output
+decompressHelper [] _ _ _ output = output
+decompressHelper (code : codes) prev revDict nextCode output =
+    let
+        (entry, revDict', nextCode') =
+            decodeEntry code prev revDict nextCode 
+        output' = output ++ entry
+    in decompressHelper codes entry revDict' nextCode' output'
 
 -- helpers
 
@@ -51,3 +70,22 @@ lookupCode dict s =
     case Map.lookup s dict of
         Just x -> x
         Nothing -> error ("lookupCode: missing key: " ++ show s)
+
+decodeEntry
+    :: Int -- current code
+    -> String -- previous entry
+    -> IntMap.IntMap String -- dictionary
+    -> Int -- next code
+    -> (String, IntMap.IntMap String, Int)
+decodeEntry code prev dict nextCode =
+    case IntMap.lookup code dict of
+        Just entry ->
+            -- regular case
+            let newEntry = prev ++ [head entry]
+                dict' = IntMap.insert nextCode newEntry dict
+            in (entry, dict', nextCode + 1)
+        Nothing ->
+            -- special case: entry = prev ++ first(prev)
+            let entry = prev ++ [head prev]
+                dict' = IntMap.insert nextCode entry dict
+            in (entry, dict', nextCode + 1)
