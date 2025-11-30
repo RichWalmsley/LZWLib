@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.IntMap.Strict as IntMap
 import Data.Char (chr, ord)
 import Data.Maybe (fromMaybe)
+import Data.Bits (Bits(xor))
 
 -- Dictionary intializers
 
@@ -16,7 +17,26 @@ revInitialDict = IntMap.fromList [ (n, [chr n]) | n <- [0..255] ]
 -- compression algorithm
 
 lzwCompress :: String -> [Int]
-lzwCompress input = undefined
+lzwCompress input = compressHelper input "" initialDict 256 []
+
+compressHelper
+    :: String -- remaining input
+    -> String -- current prefix (w)
+    -> Map.Map String Int -- dictionary
+    -> Int -- next available code
+    -> [Int] -- output codes reversed
+    -> [Int] -- final list of codes 
+compressHelper [] "" _ _ acc = reverse acc
+compressHelper [] w dict _ acc = reverse (lookupCode dict w : acc)
+compressHelper (k:ks) w dict nextCode acc = 
+    let wk = w ++ [k]
+    in if Map.member wk dict
+        then compressHelper ks wk dict nextCode acc
+        else
+            let outCode = lookupCode dict w
+                dict' = Map.insert wk nextCode dict
+                acc' = outCode : acc
+            in compressHelper ks [k] dict' (nextCode + 1) acc'
     
 -- decompression algorithm
 
@@ -26,3 +46,8 @@ lzwDecompress (firstCode : rest) = undefined
 
 -- helpers
 
+lookupCode :: Map.Map String Int -> String -> Int
+lookupCode dict s =
+    case Map.lookup s dict of
+        Just x -> x
+        Nothing -> error ("lookupCode: missing key: " ++ show s)
