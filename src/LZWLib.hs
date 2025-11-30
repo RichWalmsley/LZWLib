@@ -69,6 +69,7 @@ lookupCode dict s =
         Just x -> x
         Nothing -> error ("lookupCode: missing key: " ++ show s)
 
+-- Used to handle two cases of entry lookup: regular case of codes & composed codes
 decodeEntry
     :: Int -- current code
     -> String -- previous entry
