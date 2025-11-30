@@ -2,9 +2,7 @@ module LZWLib (lzwCompress, lzwDecompress) where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.IntMap.Strict as IntMap
-import Data.Char (chr, ord)
-import Data.Maybe (fromMaybe)
-import Data.Bits (Bits(xor))
+import Data.Char (chr)
 
 -- Dictionary intializers
 
